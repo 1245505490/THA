@@ -5,8 +5,6 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.functional as F
-
-from models.ODE import ODENet
 from models.transformer import MultiHeadAttention, PositionalWiseFeedForward, PositionalEncoding
 from models.utils import seq_mask, masked_softmax
 from models.transformer import *
@@ -282,13 +280,7 @@ class Encoder(nn.Module):
 
         time_feature = self.time_layer(time_feature)
         output_pos, ind_pos = self.pos_embedding(visit_lens.unsqueeze(-1))
-
-        seq_length = visits_embeddings.size(1)
-        integration_time = torch.linspace(0., 1., seq_length)
-        y0 = visits_embeddings[:, 0, :]
-        interval_embeddings = self.odeNet_interval(y0, integration_time).permute(1, 0, 2)
-        los_embeddings = self.odeNet_los(visits_embeddings)
-        output = visits_embeddings + time_feature + output_pos + interval_embeddings + los_embeddings
+        output = visits_embeddings + time_feature + output_pos
         output *= v_mask
         att_mask = padding_mask(ind_pos, ind_pos)
         for encoder in self.encoder_layers:
